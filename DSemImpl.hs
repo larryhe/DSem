@@ -17,6 +17,10 @@
 
 -- --------------------------------------------	--
 -- ---------- Abstract Syntax -----------------	--
+module DSemImpl (
+        Numeral,
+        Ident
+) where
 
 			-- terminal nodes of the syntax --
 type      Numeral  = Int
