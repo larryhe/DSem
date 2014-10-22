@@ -32,7 +32,7 @@ and
     Expression =
               num    of Numeral
     	    | False 
-	    | True
+            | True
     	    | id     of Ident
     	    | sumof  of Expression  * Expression
     	    | subof  of Expression  * Expression
