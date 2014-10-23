@@ -240,15 +240,14 @@ input  = Id "input"       -- a shorthand..
 result = Id "result"
 
 e1 = Num 2
-e2 = Sumof (Num 1) (Num 2)
+e2 = Sumof (Num 1, Num 2)
 
 -- Trace_flag = "Test: expressions    [ 2, 1+2]"
 a1 = evaluate e1 env_null sto_null;        --  = 2
 a2 = evaluate e2 env_null sto_null;        --  = 3
 
 -- Trace_flag = "Test: expressions    [ 1+2*3 = 7 ]"
-a3 = evaluate (Sumof (Num 1) (Prodof (Num 2) (Num 3)))
-                        env_null sto_null; --  = 7
+a3 = evaluate (Sumof (Num 1, Prodof (Num 2, Num 3))) env_null sto_null; --  = 7
 
 test1() = do print ":---: expressions  [ 2, 1+2, 1+2*3 ]"
              print a1
