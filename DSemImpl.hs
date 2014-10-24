@@ -40,8 +40,7 @@ data Expression =
     	    | Subof   (Expression,  Expression)
     	    | Prodof  (Expression,  Expression)
     	    | Less    (Expression,  Expression)
-         -- | Leten   (Declaration, Expression)
-         --   deriving Show
+           deriving Show
 
 data Declaration =
 	      Constdef (Ident,  Expression)
@@ -87,13 +86,13 @@ lessthan  (x, y) = x < y
 -- ---------- Storage   ---------- --
 -- fun deallocate sto loc:Location = sto	-- ... later --
 
-data Sval  = Stored Storable | Undef | Unused
+data Sval  = Stored Storable | Undef | Unused deriving (Show)
 
 -- The actual storage in a Store
 type DataStore = Location -> Sval
 
 --	                 --bot---   --top---  --data---
-data Store = Store (Location,  Location,  DataStore)
+data Store = Store (Location,  Location,  DataStore) 
 
 update :: (Store, Location, Value) -> Store
 update (Store(bot,top,sto), loc, v) =
@@ -254,15 +253,11 @@ test1() = do print ":---: expressions  [ 2, 1+2, 1+2*3 ]"
              print a2
              print a3
 -- ------------------------- --
--- dx = Constdef "x" (Num 2)      -- a declaration --
--- a4 = elaborate dx env_null sto_null
+dx = Constdef ("x" ,Num 2)      -- a declaration --
+a4 = elaborate dx env_null sto_null
 
-{- ========== --
-a5 = evaluate (  Leten  dx (Sumof (Num 1) (Id "x") ) )
-                        env_null kont_null sto_null; -- = 3
--- ========== --}
--- test2() = do print ":---: declaration    {const x = 2}"
---              print a4
+test2() = do print ":---: declaration    {const x = 2}"
+             print a4
 -- =============================================== --
 --   result := input
 -- pgm1 = Prog( Assign "result" input )
