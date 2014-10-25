@@ -257,24 +257,7 @@ dx = Constdef ("x" ,Num 2)      -- a declaration --
 a4 = elaborate dx env_null sto_null
 
 test2() = do print ":---: declaration    {const x = 2}"
-             print a4
--- =============================================== --
---   result := input
--- pgm1 = Prog( Assign "result" input )
-
-                        -- run the program on an input --
--- test3() = do print ":---: {result = input}  [1, 2]"
---              print (run pgm1  1)
---              print (run pgm1  2)
--- =============================================== --
---   result := input + 1
---
--- pgm2 = Prog( Assign "result" (Sumof (Num 1) input ) )
-
-                        -- run the program on inputs --
--- test4() = do print ":---: {result = input+1}  [2, 3]"
---              print $ run pgm2  1
---              print $ run pgm2  2
+             print (find(fst(a4), "x"))
 
 {- -----------------------------------------------
  *   let value x ~ 2
@@ -284,38 +267,42 @@ test2() = do print ":---: declaration    {const x = 2}"
  *                 else y:=2
  --}
 
--- Note that we do no output, so need to dump store for results
--- cmd' =
---   Letin  (Constdef "x" (Num 2))
---          (Letin (Vardef "y" Int)
---                 (Cmdcmd (Assign "y" (Num 3))
---                         (Ifthen (Less (Id "x") (Id "y"))
---                                 (Assign "y" (Num 1))
---                                 (Assign "y" (Num 2))
---                                 )
---                         )
---                 )
---
--- cmd =
---   Letin (Constdef "x" (Num 2))
---         (Letin (Vardef "y" Int)
---                (Cmdcmd (Assign "y" (Num 3))
---                        (Assign "y" (Num 1))
---                        )
---                 )
---
---                 -- get Answer --
--- a9  = execute cmd  env_null sto_null
---
---                 -- get a full set Answers..!  --
--- a9b  = execute cmd  env_null sto_null
---
--- test5() = do print ":---: Simple Program.2  -> [1]"
---              -- trace("Pre-a9") print "Pre-a9"
---              print a9
---              print a9b
-             -- print $ run (Prog cmd) 000
+cmd1 =
+  Letin  (Constdef ("x", Num 2),
+         Letin (Vardef ("y", Int),
+                Cmdcmd (Assign ("y" , Num 3),
+                        Ifthen (Less (Id "x", Id "y"),
+                                Assign ("y" , Num 1),
+                                Assign ("y" , Num 2)
+                                )
+                        )
+                )
+         )
 
+cmd2 =
+  Letin (Constdef ("x" , Num 2),
+        Letin (Vardef ("y", Int),
+               Cmdcmd (Assign ("y" , Num 3),
+                       Assign ("y" , Num 10)
+                       )
+                )
+        )
+
+                -- get Answer --
+sto2  = execute cmd1  env_null sto_null
+sto3  = execute cmd2  env_null sto_null
+
+test3() = do print ":---: Simple Program.2 "
+             print " let value x = 2 in "
+             print " let var y: Int in "
+             print " y = 3 if x<y then y:=1 else y:=2"
+             print (fetch(sto2, 1))
+
+test4() = do print ":---: Simple Program.3 "
+             print " let value x = 2 in "
+             print " let var y: Int in "
+             print " y:=3 ; y:=10"
+             print (fetch(sto3, 1))
 {- --------------------------------------------------------
  *   let Const  x ~ 2
  *   in let var y : int
@@ -324,29 +311,35 @@ test2() = do print ":---: declaration    {const x = 2}"
  *         in  z := 0
  *             z := z+1
  --}
--- x    = Id "x"      -- some shorthands...
--- y    = Id "y"
--- z    = Id "z"
--- zero = Num 0
--- one  = Num 1
---
--- cmd3 =
---   Letin (Constdef "x" (Num 2))
---         (Letin (Vardef "y" Int)
---                (Cmdcmd (Assign "y" (Num 3))
---                        (Letin (Vardef "z" Int)
---                               (Cmdcmd (Assign "z" zero)
---                                       (Assign "z" (Sumof z one))                                      )
---                        )
---                 )
---          )
---
--- a10a = execute cmd3  env_null sto_null
--- a10b = execute cmd3  env_null sto_null
---
--- test6() = do print ":---: Simple Program.3  -> [3,1]"
---              -- print (run (Prog cmd3) 0)
---              print a10b
+x    = Id "x"      -- some shorthands...
+y    = Id "y"
+z    = Id "z"
+zero = Num 0
+one  = Num 1
+
+cmd3 =
+  Letin (Constdef ("x" , Num 2),
+        Letin (Vardef ("y", Int),
+               Cmdcmd (Assign ("y" , Num 3),
+                       Letin (Vardef ("z", Int),
+                              Cmdcmd (
+                                      Assign ("z", zero),
+                                      Assign ("z", Sumof (z,one))
+                                    )
+                            )
+                      )
+         )
+    )
+
+sto5 = execute cmd3  env_null sto_null
+
+test5() = do print ":---: Simple Program.4 z will evluated to 1 "
+             print " let Const  x ~ 2 "
+             print " in let var y : int "
+             print "    in y := 3 "
+             print "       let var z : int "
+             print "       in  z := 0 "
+             print (fetch(sto5, 2))
 
 {- --------------------------------------------------------
  *   // a loop
@@ -357,40 +350,40 @@ test2() = do print ":---: declaration    {const x = 2}"
  *         in  z:= 0            { multiply z = x*y }
  *             while 0<y do  z := z+x; y := y-1
  --}
--- cmd4 =
---   Letin (Constdef "x" (Num 2))
---         (Letin  (Vardef "y" Int)
---                 (Cmdcmd (Assign "y" (Num 3))
---                         (Letin (Vardef "z" Int)
---                                (Cmdcmd (Assign "z" zero)
---                                        (Whiledo (Less zero y)
---                                          (Cmdcmd (Assign "z" (Sumof z x  ))
---                                                  (Assign "y" (Subof y one))
---                                                   )
---                                         )
---                                 )
---                          )
---                  )
---          )
---
--- a11a = execute cmd4  env_null sto_null
--- a11b = execute cmd4  env_null sto_null
+cmd4 =
+  Letin (Constdef ("x" ,Num 2),
+        Letin  (Vardef ("y", Int),
+                Cmdcmd (Assign ("y" , Num 3),
+                        Letin (Vardef ("z", Int),
+                               Cmdcmd (Assign ("z", zero),
+                                       Whiledo (Less (zero, y),
+                                                Cmdcmd (Assign ("z" , Sumof(z, x)),
+                                                        Assign ("y" , Subof(y,one))
+                                                        )
+                                               )
+                                      )
+                              )
+                       )
+              )
+        )
 
--- test7() = do print ":---: Simple Program.4  -> [0,6, Halt]"
-             -- print $ run (Prog cmd4) 0
-             -- print a11b
+sto6 = execute cmd4  env_null sto_null
+
+test6() = do print ":---: Simple Program.5  test loop z will be evaluated to 6"
+             print "let Const  x ~ 2 "
+             print "in let var y : int "
+             print "   in y := 3 "
+             print "      let var z : int "
+             print "      in  z:= 0            { multiply z = x*y } "
+             print "             while 0<y do  z := z+x; y := y-1"
+             print (fetch(sto6, 2))
 -- --------------------------------------------------------
 -- ==== Tests::
-
--- impcAns = [ a1, a2, a3a, a4, a5, a6, a7, a8 ]
--- impcAns = [ a1, a2, a3, a4, a6, a7]
-
--- testSuits = do print "------ APL:: DSem_impc"
-               -- test1()   -- Expressions
-               -- test2()   -- Declarations
-               -- test3()   -- Expressions
-               -- test4()   -- Expressions
-               -- test5()   -- simple program.2
-               -- test6()   -- simple program.3
-               -- test7()   -- simple program.4
+testSuits = do print "------ APL:: DSem_impc"
+               test1()   -- Expressions
+               test2()   -- Declarations
+               test3()   -- simple program.2
+               test4()   -- simple program.3
+               test5()   -- simple program.4
+               test6()   -- simple program.5
 
