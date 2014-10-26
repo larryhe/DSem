@@ -29,6 +29,7 @@ data Command =
             | Cmdcmd   (Command,     Command   )
             | Ifthen   (Expression,  Command, Command)
             | Whiledo  (Expression,  Command   )
+            | Proccall (Ident, Expression)
 
 data Expression =
             Num    Numeral
@@ -45,6 +46,7 @@ data Expression =
 data Declaration =
 	      Constdef (Ident,  Expression)
 	    | Vardef   (Ident,  TypeDef   )
+        | ProcDef     (Ident,  Ident, Command)
 
 data TypeDef =
 	      Bool | Int
@@ -61,12 +63,17 @@ data	Value	= IntValue    Int
                   deriving (Eq, Show)
 
 type	Storable  = Value
+type	Procedure  = Value -> Store -> Store
 
-data	Bindable  = Const Value | Variable Location
-                  deriving (Eq, Show)
+instance Show (a->b) where show a= "function"
+
+data	Bindable  = Const Value | Variable Location | Proc Procedure
+                    deriving (Show)
 
 data	Denotable = Unbound | Bound Bindable
-                  deriving (Eq, Show)
+                    deriving (Eq, Show)
+
+instance Eq Bindable where _ == _ = True
 
 -- --------------------------------------------	--
 -- ---------- Semantic Functions --------------	--
@@ -142,6 +149,13 @@ coerc :: (Store, Bindable) -> Value
 coerc (sto, Const v)      = v
 coerc (sto, Variable loc) = fetch(sto,loc)
 
+-- bind-parameter and give-argument utilities
+bindParam :: (Ident, Value) -> Environ
+bindParam (name, val) = bind (name, Const val)
+
+giveArg :: (Expression, Environ, Store) -> Value
+giveArg (exp, env, sto) = evaluate exp env sto
+
 -- ---------- Initialize system  ----------
 env_null :: Environ
 env_null =  \i -> Unbound
@@ -183,6 +197,10 @@ execute ( Ifthen(e,c1,c2) ) env sto =
 execute ( Whiledo(e,c) ) env sto =
             let exe_while env' sto' = let TruthValue b1 = evaluate e env' sto' in if b1 == True then exe_while env' (execute c env' sto') else sto'
             in exe_while env sto
+
+execute (Proccall(name, exp)) env sto = 
+            let Proc proc = find (env, name) in 
+                    let arg = giveArg(exp, env, sto) in proc arg sto
 
      			-- simple, just build a Const
 evaluate ( Num(n)  )  env sto  = IntValue n
@@ -231,6 +249,10 @@ elaborate ( Constdef(name,e) ) env sto =
 elaborate ( Vardef(name,tdef) ) env sto =
      	let (sto',loc) = allocate sto
 		in  ( bind(name, Variable loc), sto' )
+
+elaborate (ProcDef(name, fp, comm)) env sto = 
+        let proc arg sto' = let parenv = bindParam (fp, arg) in execute comm (overlay (parenv, env)) sto'
+        in (bind(name, Proc proc), sto)
 
 -- ============================================	 --
 -- run test suits 
