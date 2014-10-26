@@ -1,1 +1,6 @@
+October 20th: started read the requirement of project and decide which language to use to implement the lab (Haskell)
+October 21th: finished simple expressions evaluation
+October 22th: finished command execution 
+October 23th: added unit tests for expressions evaluation and command execution
+October 24th: submitted the lab
 
