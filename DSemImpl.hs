@@ -41,6 +41,7 @@ data Expression =
     	    | Subof   (Expression,  Expression)
     	    | Prodof  (Expression,  Expression)
     	    | Less    (Expression,  Expression)
+    	    | Equ    (Expression,  Expression)
            deriving Show
 
 data Declaration =
@@ -89,6 +90,7 @@ diff  (x, y) = x - y
 prod  (x, y) = x * y
 
 lessthan  (x, y) = x < y
+equal  (x, y) = x == y
 
 -- ---------- Storage   ---------- --
 -- fun deallocate sto loc:Location = sto	-- ... later --
@@ -227,6 +229,11 @@ evaluate ( Prodof(e1,e2) ) env sto =
         in IntValue (prod(i1, i2))
 
 evaluate ( Less(e1,e2) ) env sto =
+        let IntValue i1 = evaluate e1 env sto
+            IntValue i2 = evaluate e2 env sto
+        in TruthValue (lessthan(i1, i2))
+
+evaluate ( Equ(e1,e2) ) env sto =
         let IntValue i1 = evaluate e1 env sto
             IntValue i2 = evaluate e2 env sto
         in TruthValue (lessthan(i1, i2))
@@ -399,6 +406,35 @@ test6() = do print ":---: Simple Program.5  test loop z will be evaluated to 6"
              print "      in  z:= 0            { multiply z = x*y } "
              print "             while 0<y do  z := z+x; y := y-1"
              print (fetch(sto6, 2))
+
+{- --------------------------------------------------------
+ *   // a loop
+ *   let proc factorial n
+ *   in if n == 1 then 1 else n * factorial n-1
+ --}
+procall1 =
+  Letin (ProcDef ("factorial" , "n",
+                    Letin  (Vardef ("y", Int),
+                            Cmdcmd (Assign ("y" , Id "n"),
+                                    Letin (Vardef ("z", Int),
+                                        Cmdcmd (Assign ("z", one),
+                                                Whiledo (Less (zero, y),
+                                                            Cmdcmd (Assign ("z" , Prodof(z, y)),
+                                                                    Assign ("y" , Subof(y,one))
+                                                                    )
+                                                        )
+                                                )
+                                        )
+                                )
+                        )),
+        Proccall  ("factorial", Num 5)
+        )
+
+sto7 = execute procall1  env_null sto_null
+test7() = do print ":---: Simple Program.6  test loop z will be evaluated to 120"
+             print "   let proc factorial n "
+             print "   in if n == 1 then 1 else n * factorial n-1 "
+             print (fetch(sto7, 2))
 -- --------------------------------------------------------
 -- ==== Tests::
 testSuits = do print "------ APL:: DSem_impc"
@@ -408,4 +444,5 @@ testSuits = do print "------ APL:: DSem_impc"
                test4()   -- simple program.3
                test5()   -- simple program.4
                test6()   -- simple program.5
+               test7()   -- simple program.5
 
