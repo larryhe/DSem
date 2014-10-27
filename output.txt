@@ -1,3 +1,8 @@
+"------ APL:: DSem_impc"
+":---: expressions  [ 2, 1+2, 1+2*3 ]"
+IntValue 2
+IntValue 3
+IntValue 7
 ":---: declaration    {const x = 2}"
 Const (IntValue 2)
 ":---: Simple Program.2 "
@@ -25,3 +30,7 @@ IntValue 1
 "      in  z:= 0            { multiply z = x*y } "
 "             while 0<y do  z := z+x; y := y-1"
 IntValue 6
+":---: Simple Program.6  test loop z will be evaluated to 120"
+"   let proc factorial n "
+"   in if n == 1 then 1 else n * factorial n-1 "
+IntValue 120

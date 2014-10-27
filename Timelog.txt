@@ -2,5 +2,7 @@ October 20th: started read the requirement of project and decide which language 
 October 21th: finished simple expressions evaluation
 October 22th: finished command execution 
 October 23th: added unit tests for expressions evaluation and command execution
-October 24th: submitted the lab
+October 24th: add procedure implementation
+October 25th: add test cases for procedure implementation using factorial (5) which evaluated to 120 correctly
+October 26th: submitted the lab
 
